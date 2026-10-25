@@ -62,6 +62,8 @@ function build(day,info){
     info.textContent=`${n} paradas · ${r.km.toFixed(1).replace('.',',')} km ${day.modo==='car'?'en coche':'a pie'}`}).catch(()=>{info.textContent=`${n} paradas · sin ruta por calles (offline)`});
   return g;
 }
+TRIPS.sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||'')); // más reciente primero
+const btns={};
 const root=document.getElementById('trips');
 TRIPS.forEach((t,ti)=>{
   const d=document.createElement('details');d.open=ti===0;
@@ -71,8 +73,11 @@ TRIPS.forEach((t,ti)=>{
     b.className='dia';b.style.setProperty('--c',day.color);b.setAttribute('aria-pressed','false');
     b.innerHTML=`<i></i><span>${day.name}<small>${day.stops.length-1} paradas</small></span>`;
     const info=b.querySelector('small');
+    btns[id]=b;
     b.onclick=()=>{
       if(active[id]){active[id].remove();delete active[id];b.setAttribute('aria-pressed','false');return}
+      // al activar un día, se apagan las rutas de otros viajes
+      Object.keys(active).forEach(k=>{if(k.split('-')[0]!==String(ti)){active[k].remove();delete active[k];btns[k].setAttribute('aria-pressed','false')}});
       active[id]=build(day,info).addTo(map);b.setAttribute('aria-pressed','true');
       map.fitBounds(active[id].getBounds(),{padding:[40,40]});
     };
