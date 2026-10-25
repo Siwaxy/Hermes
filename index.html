@@ -27,7 +27,7 @@ details summary{cursor:pointer;font-weight:bold;padding:6px 0;line-height:1.25}
  #loc{bottom:auto;top:calc(10px + env(safe-area-inset-top))}}
 </style></head><body>
 <div id="map"></div>
-<div id="panel"><h1>Mis viajes</h1><div id="trips"></div></div>
+<div id="panel"><h1>Mis viajes</h1><p style="margin:0 0 6px;font-size:12px;color:#5b6475">Los puntos con borde discontinuo son opcionales.</p><div id="trips"></div></div>
 <button id="loc" title="Mi ubicación" aria-label="Mi ubicación">📍</button>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="trips.js"></script>
@@ -37,11 +37,12 @@ L.control.zoom({position:'topright'}).addTo(map);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
 const active={}, gm=s=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(s.n.replace(/\(.*\)/,'')+' Sevilla')+'&center='+s.ll;
 
-async function walk(stops){
-  const key='ruta:'+stops.map(s=>s.ll).join(';');
+async function walk(stops,modo){
+  const car=modo==='car';
+  const key='ruta:'+(car?'c:':'p:')+stops.map(s=>s.ll).join(';');
   try{const c=localStorage.getItem(key);if(c)return JSON.parse(c)}catch{}
   const q=stops.map(s=>s.ll[1]+','+s.ll[0]).join(';');
-  const r=await fetch('https://routing.openstreetmap.de/routed-foot/route/v1/foot/'+q+'?overview=full&geometries=geojson');
+  const r=await fetch('https://routing.openstreetmap.de/'+(car?'routed-car/route/v1/driving/':'routed-foot/route/v1/foot/')+q+'?overview=full&geometries=geojson');
   const j=(await r.json()).routes[0];
   const out={line:j.geometry.coordinates.map(c=>[c[1],c[0]]),km:j.distance/1000};
   try{localStorage.setItem(key,JSON.stringify(out))}catch{}
@@ -55,10 +56,10 @@ function build(day,info){
     if(i===stops.length-1&&s.n===stops[0].n)return;
     const num=++n;
     L.marker(s.ll,{icon:L.divIcon({className:'pin'+(s.opt?' opt':''),html:`<span style="--c:${day.color}">${num}</span>`,iconSize:[24,24]})})
-     .bindPopup(`<b>${s.n}</b>${s.s?'<br>'+'⭐'.repeat(s.s):''}${s.note?'<br>'+s.note:''}<br><a target="_blank" rel="noopener" href="${gm(s)}">Abrir en Google Maps</a>`).addTo(g);
+     .bindPopup(`<b>${s.n}</b>${s.note?'<br>'+s.note:''}<br><a target="_blank" rel="noopener" href="${gm(s)}">Abrir en Google Maps</a>`).addTo(g);
   });
-  walk(stops).then(r=>{straight.remove();L.polyline(r.line,{color:day.color,weight:5,opacity:.9}).addTo(g).bringToBack();
-    info.textContent=`${n} paradas · ${r.km.toFixed(1).replace('.',',')} km a pie`}).catch(()=>{info.textContent=`${n} paradas · sin ruta a pie (offline)`});
+  walk(stops,day.modo).then(r=>{straight.remove();L.polyline(r.line,{color:day.color,weight:5,opacity:.9}).addTo(g).bringToBack();
+    info.textContent=`${n} paradas · ${r.km.toFixed(1).replace('.',',')} km ${day.modo==='car'?'en coche':'a pie'}`}).catch(()=>{info.textContent=`${n} paradas · sin ruta por calles (offline)`});
   return g;
 }
 const root=document.getElementById('trips');
