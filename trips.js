@@ -1,13 +1,15 @@
-// Cada viaje -> días -> paradas en orden. ll = [lat, lng], note = aclaración corta, opt = parada opcional.
-// fecha ("AAAA-MM") sirve para ordenar: el viaje más reciente sale primero.
-// modo: 'car' en un día para trazar la ruta en coche (por defecto, a pie).
-const H = [37.3921, -5.9946]; // Hotel, C. Cuna 4
+// Cada viaje -> lugar, fecha, días -> paradas en orden. Coordenadas siempre literales (sin constantes ni variables).
+// lugar: ciudad/zona del viaje (opcional). Con lugar y fecha se genera el título 'Viaje a {lugar} en {mes} {año}' y se usa para buscar en Google Maps.
+// title: (opcional) título manual; si existe, tiene prioridad sobre el generado.
+// fecha ('AAAA-MM'): ordena los viajes (el más reciente primero) y da el mes/año del título.
+// day: name, color, modo (opcional; 'car' traza la ruta en coche, por defecto a pie), stops.
+// stop: n = nombre, ll = [lat, lng], note = aclaración corta, opt = true si es parada opcional.
 window.TRIPS = [
 {
-  title: "Viaje a Sevilla en octubre 2026", fecha: "2026-10",
+  lugar: "Sevilla", fecha: "2026-10",
   days: [
     { name: "Lun 5 · Centro, Santa Cruz y flamenco", color: "#1f5fa8", stops: [
-      { n: "Hotel (C. Cuna 4)", ll: H, note: "Base del viaje, a un paso del Salvador y de Sierpes." },
+      { n: "Hotel (C. Cuna 4)", ll: [37.3921, -5.9946], note: "Base del viaje, a un paso del Salvador y de Sierpes." },
       { n: "Plaza del Salvador", ll: [37.3925, -5.9930], note: "Primera cerveza y tapa. Su iglesia se visita el jueves con la entrada de la Catedral." },
       { n: "Calle Sierpes", ll: [37.3894, -5.9935], note: "Calle peatonal y comercial, de las más tradicionales del centro." },
       { n: "Calle Tetuán", ll: [37.3900, -5.9950], note: "Paralela a Sierpes; mira también las calles laterales." },
@@ -16,10 +18,10 @@ window.TRIPS = [
       { n: "Barrio de Santa Cruz", ll: [37.3857, -5.9895], note: "Antigua judería. Perderse sin mapa es parte del plan." },
       { n: "Patio de Banderas", ll: [37.3860, -5.9918], note: "Plaza entre el Alcázar y la Catedral, con vistas a la Giralda." },
       { n: "Flamenco · Casa de la Memoria", ll: [37.3920, -5.9944], note: "C. Cuna, 6. Conviene tener la entrada reservada; el aforo es pequeño." },
-      { n: "Hotel (C. Cuna 4)", ll: H, note: "Vuelta al hotel." }
+      { n: "Hotel (C. Cuna 4)", ll: [37.3921, -5.9946], note: "Vuelta al hotel." }
     ]},
     { name: "Mar 6 · Pilatos, Plaza de España y Triana", color: "#c98a1b", stops: [
-      { n: "Hotel (C. Cuna 4)", ll: H, note: "Salida a las 9:00." },
+      { n: "Hotel (C. Cuna 4)", ll: [37.3921, -5.9946], note: "Salida a las 9:00." },
       { n: "Casa de Pilatos", ll: [37.3927, -5.9905], note: "Palacio mudéjar y renacentista. Calcula 1 h; lo mejor son los patios." },
       { n: "Barrio de Santa Cruz", ll: [37.3857, -5.9895], note: "Recorre calles distintas a las del lunes. Buen sitio para un café." },
       { n: "Puerta de Jerez", ll: [37.3837, -5.9948], note: "Plaza junto al Hotel Alfonso XIII; buen punto para orientarse." },
@@ -29,15 +31,15 @@ window.TRIPS = [
       { n: "Puente de Triana", ll: [37.3855, -6.0000], note: "Inaugurado en 1852, también llamado puente de Isabel II." },
       { n: "Triana", ll: [37.3834, -6.0033], note: "Barrio marinero y de ceramistas, cuna de flamencos y toreros." },
       { n: "Calle Betis", ll: [37.3828, -6.0003], note: "Paseo con terrazas junto al río, con el centro de Sevilla de fondo." },
-      { n: "Hotel (C. Cuna 4)", ll: H, note: "Vuelta por el puente de San Telmo." }
+      { n: "Hotel (C. Cuna 4)", ll: [37.3921, -5.9946], note: "Vuelta por el puente de San Telmo." }
     ]},
     { name: "Mié 7 · Dueñas, Alameda y Setas", color: "#a82a45", stops: [
-      { n: "Hotel (C. Cuna 4)", ll: H, note: "Salida hacia el palacio de Dueñas." },
+      { n: "Hotel (C. Cuna 4)", ll: [37.3921, -5.9946], note: "Salida hacia el palacio de Dueñas." },
       { n: "Palacio de Dueñas", ll: [37.3960, -5.9893], note: "Palacio de la Casa de Alba. Visita de 1–1,5 h; aquí nació el poeta Antonio Machado." },
       { n: "Basílica de la Macarena", ll: [37.4008, -5.9918], opt: true, note: "Alberga la Virgen de la Esperanza Macarena. Solo si queda tiempo." },
       { n: "Alameda de Hércules", ll: [37.3985, -5.9948], note: "Paseo del siglo XVI y ambiente alternativo. Buen sitio para comer o tapear." },
       { n: "Setas · Antiquarium y mirador", ll: [37.3933, -5.9917], note: "Antiquarium con ruinas romanas. Sube al mirador al atardecer; de noche, Aurora." },
-      { n: "Hotel (C. Cuna 4)", ll: H, note: "Cena por el centro." }
+      { n: "Hotel (C. Cuna 4)", ll: [37.3921, -5.9946], note: "Cena por el centro." }
     ]},
     { name: "Jue 8 · Río, Arenal y Catedral 13:30", color: "#2f7d5b", stops: [
       { n: "Plaza Nueva", ll: [37.3881, -5.9962], note: "Punto de partida tranquilo, con la estatua de San Fernando." },
@@ -47,12 +49,12 @@ window.TRIPS = [
       { n: "Mercado del Barranco", ll: [37.3855, -5.9990], note: "Mercado de estructura de hierro del siglo XIX. Buen sitio para comer." },
       { n: "Catedral y Giralda · 13:30", ll: [37.3862, -5.9926], note: "Llega a las 13:15–13:20: la hora de la entrada es de acceso. Cuenta ~75 min." },
       { n: "Iglesia del Salvador", ll: [37.3925, -5.9929], note: "Incluida en la entrada. Se levantó sobre la antigua mezquita mayor." },
-      { n: "Hotel (C. Cuna 4)", ll: H, note: "Descanso y último paseo opcional por Betis." }
+      { n: "Hotel (C. Cuna 4)", ll: [37.3921, -5.9946], note: "Descanso y último paseo opcional por Betis." }
     ]}
   ]
 },
 {
-  title: "Viaje a Cantabria en [mes año]", fecha: "2026-08",
+  lugar: "Cantabria", fecha: "2026-08",
   days: [
     { name: "Día 1 · Santander", color: "#1f5fa8", modo: "car", stops: [
       { n: "Palacio de la Magdalena", ll: [43.4713, -3.7655], note: "Palacio de principios del siglo XX que fue residencia veraniega de Alfonso XIII." },
@@ -82,7 +84,7 @@ window.TRIPS = [
   ]
 },
 {
-  title: "Viaje a Barcelona en [mes año]", fecha: "2026-06",
+  lugar: "Barcelona", fecha: "2026-06",
   days: [
     { name: "Día 1 · Gótico y Born", color: "#1f5fa8", stops: [
       { n: "Plaça de Catalunya", ll: [41.3870, 2.1700], note: "Punto de partida; une La Rambla y el Eixample." },
@@ -116,7 +118,7 @@ window.TRIPS = [
   ]
 },
 {
-  title: "Viaje a Madrid en [mes año]", fecha: "2026-03",
+  lugar: "Madrid", fecha: "2026-03",
   days: [
     { name: "Día 1 · Madrid de los Austrias", color: "#1f5fa8", stops: [
       { n: "Puerta del Sol", ll: [40.4169, -3.7035], note: "Aquí está el kilómetro cero de las carreteras españolas." },

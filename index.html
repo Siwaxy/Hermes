@@ -24,7 +24,7 @@ details summary{cursor:pointer;font-weight:bold;padding:6px 0;line-height:1.25}
 .pin span{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--c);color:#fff;font:bold 12px sans-serif;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5)}
 .pin.opt span{background:#fff;color:var(--c);border:2px dashed var(--c)}
 @media(max-width:640px){#panel{left:0;right:0;top:auto;bottom:0;width:auto;max-height:46%;border-radius:14px 14px 0 0;padding-bottom:calc(10px + env(safe-area-inset-bottom))}
- #loc{bottom:auto;top:calc(10px + env(safe-area-inset-top))}}
+ #loc{bottom:auto;right:auto;left:10px;top:calc(10px + env(safe-area-inset-top))}}
 </style></head><body>
 <div id="map"></div>
 <div id="panel"><h1>Mis viajes</h1><p style="margin:0 0 6px;font-size:12px;color:#5b6475">Los puntos con borde discontinuo son opcionales.</p><div id="trips"></div></div>
@@ -34,8 +34,11 @@ details summary{cursor:pointer;font-weight:bold;padding:6px 0;line-height:1.25}
 <script>
 const map=L.map('map',{zoomControl:false}).setView([37.389,-5.995],14);
 L.control.zoom({position:'topright'}).addTo(map);
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
-const active={}, gm=s=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(s.n.replace(/\(.*\)/,'')+' Sevilla')+'&center='+s.ll;
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,crossOrigin:true,attribution:'© OpenStreetMap'}).addTo(map);
+const active={}, gm=(s,l)=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(l?s.n.replace(/\(.*\)/,'').trim()+', '+l:s.ll.join(','));
+const np=st=>{const n=st.length-(st.length>1&&st[st.length-1].n===st[0].n?1:0);return n+(n==1?' parada':' paradas')};
+const pad=()=>innerWidth<=640?{paddingTopLeft:[40,40],paddingBottomRight:[40,document.getElementById('panel').offsetHeight+20]}:{padding:[40,40]};
+const fit=()=>{const gs=Object.values(active);if(!gs.length)return;const b=L.latLngBounds(gs[0].getBounds());gs.forEach(g=>b.extend(g.getBounds()));map.fitBounds(b,pad())};
 
 async function walk(stops,modo){
   const car=modo==='car';
@@ -43,52 +46,58 @@ async function walk(stops,modo){
   try{const c=localStorage.getItem(key);if(c)return JSON.parse(c)}catch{}
   const q=stops.map(s=>s.ll[1]+','+s.ll[0]).join(';');
   const r=await fetch('https://routing.openstreetmap.de/'+(car?'routed-car/route/v1/driving/':'routed-foot/route/v1/foot/')+q+'?overview=full&geometries=geojson');
-  const j=(await r.json()).routes[0];
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=(await r.json()).routes?.[0];
+  if(!j)throw new Error('sin ruta');
   const out={line:j.geometry.coordinates.map(c=>[c[1],c[0]]),km:j.distance/1000};
   try{localStorage.setItem(key,JSON.stringify(out))}catch{}
   return out;
 }
-function build(day,info){
+function build(day,info,lugar){
   const g=L.featureGroup(), stops=day.stops;
   const straight=L.polyline(stops.map(s=>s.ll),{color:day.color,weight:4,opacity:.7,dashArray:'6 8'}).addTo(g);
   let n=0;
   stops.forEach((s,i)=>{
-    if(i===stops.length-1&&s.n===stops[0].n)return;
+    if(stops.length>1&&i===stops.length-1&&s.n===stops[0].n)return;
     const num=++n;
     L.marker(s.ll,{icon:L.divIcon({className:'pin'+(s.opt?' opt':''),html:`<span style="--c:${day.color}">${num}</span>`,iconSize:[24,24]})})
-     .bindPopup(`<b>${s.n}</b>${s.note?'<br>'+s.note:''}<br><a target="_blank" rel="noopener" href="${gm(s)}">Abrir en Google Maps</a>`).addTo(g);
+     .bindPopup(`<b>${s.n}</b>${s.note?'<br>'+s.note:''}<br><a target="_blank" rel="noopener" href="${gm(s,lugar)}">Abrir en Google Maps</a>`).addTo(g);
   });
   walk(stops,day.modo).then(r=>{straight.remove();L.polyline(r.line,{color:day.color,weight:5,opacity:.9}).addTo(g).bringToBack();
-    info.textContent=`${n} paradas · ${r.km.toFixed(1).replace('.',',')} km ${day.modo==='car'?'en coche':'a pie'}`}).catch(()=>{info.textContent=`${n} paradas · sin ruta por calles (offline)`});
+    info.textContent=`${np(stops)} · ${r.km.toFixed(1).replace('.',',')} km ${day.modo==='car'?'en coche':'a pie'}`}).catch(()=>{info.textContent=`${np(stops)} · sin ruta por calles`});
   return g;
 }
+const MESES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+TRIPS.forEach(t=>{if(!t.title&&t.lugar&&t.fecha){const [y,m]=t.fecha.split('-');t.title=`Viaje a ${t.lugar} en ${MESES[m-1]} ${y}`}});
 TRIPS.sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||'')); // más reciente primero
 const btns={};
 const root=document.getElementById('trips');
 TRIPS.forEach((t,ti)=>{
   const d=document.createElement('details');d.open=ti===0;
-  d.innerHTML=`<summary>${t.title}</summary><div class="dias"></div>`;
+  d.innerHTML=`<summary>${t.title||t.lugar||'Viaje'}</summary><div class="dias"></div>`;
   t.days.forEach((day,di)=>{
     const id=ti+'-'+di,b=document.createElement('button');
     b.className='dia';b.style.setProperty('--c',day.color);b.setAttribute('aria-pressed','false');
-    b.innerHTML=`<i></i><span>${day.name}<small>${day.stops.length-1} paradas</small></span>`;
+    b.innerHTML=`<i></i><span>${day.name}<small>${np(day.stops)}</small></span>`;
     const info=b.querySelector('small');
     btns[id]=b;
     b.onclick=()=>{
       if(active[id]){active[id].remove();delete active[id];b.setAttribute('aria-pressed','false');return}
       // al activar un día, se apagan las rutas de otros viajes
       Object.keys(active).forEach(k=>{if(k.split('-')[0]!==String(ti)){active[k].remove();delete active[k];btns[k].setAttribute('aria-pressed','false')}});
-      active[id]=build(day,info).addTo(map);b.setAttribute('aria-pressed','true');
-      map.fitBounds(active[id].getBounds(),{padding:[40,40]});
+      active[id]=build(day,info,t.lugar).addTo(map);b.setAttribute('aria-pressed','true');
+      fit();
     };
     d.querySelector('.dias').append(b);
   });
   root.append(d);
 });
 
+map.fitBounds(TRIPS[0].days.flatMap(d=>d.stops.map(s=>s.ll)),pad());
+
 // --- Ubicación GPS ---
 const btn=document.getElementById('loc');let wid=null,follow=false,dot,halo,lock=null;
-async function wake(){try{lock=await navigator.wakeLock.request('screen')}catch{}}
+async function wake(){try{lock=await navigator.wakeLock.request('screen');if(wid===null){lock.release();lock=null}}catch{}}
 function setS(s){if(s)btn.dataset.s=s;else delete btn.dataset.s}
 function stop(){navigator.geolocation.clearWatch(wid);wid=null;follow=false;dot&&dot.remove();halo&&halo.remove();dot=halo=null;lock&&lock.release();lock=null;setS()}
 btn.onclick=()=>{
@@ -101,7 +110,7 @@ btn.onclick=()=>{
       dot=L.circleMarker(ll,{radius:8,color:'#fff',weight:3,fillColor:'#1a73e8',fillOpacity:1}).addTo(map)}
     else{dot.setLatLng(ll);halo.setLatLng(ll).setRadius(p.coords.accuracy)}
     if(follow)map.setView(ll,Math.max(map.getZoom(),16));
-  },e=>{alert('No se pudo obtener la ubicación: '+e.message);stop()},{enableHighAccuracy:true,maximumAge:2000,timeout:20000});
+  },e=>{if(e.code===1){alert('No se pudo obtener la ubicación: '+e.message);stop()}},{enableHighAccuracy:true,maximumAge:2000,timeout:20000});
 };
 map.on('dragstart',()=>{if(follow){follow=false;setS('watch')}});
 document.addEventListener('visibilitychange',()=>{if(wid!==null&&document.visibilityState==='visible')wake()});
