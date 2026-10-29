@@ -1,118 +1,36 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Mis rutas</title>
-<link rel="manifest" href="manifest.json"><link rel="icon" href="icon.svg">
-<meta name="theme-color" content="#173a6b">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<style>
-:root{--azul:#173a6b;--cal:#fbf9f4;--tinta:#1b2433;--linea:#d9d4c7}
-*{box-sizing:border-box}html,body{height:100%;margin:0;font-family:Georgia,"Iowan Old Style",serif;color:var(--tinta)}
-#map{position:absolute;inset:0}
-#panel{position:absolute;z-index:1000;background:var(--cal);border:1px solid var(--linea);border-radius:10px;box-shadow:0 2px 14px rgba(23,58,107,.25);
- left:10px;top:10px;width:330px;max-height:calc(100% - 20px);overflow:auto;padding:10px 12px}
-#panel h1{font-size:15px;margin:0 0 6px;color:var(--azul)}
-details summary{cursor:pointer;font-weight:bold;padding:6px 0;line-height:1.25}
-.dias{display:grid;gap:6px;padding:4px 0 8px}
-.dia{display:flex;align-items:center;gap:8px;text-align:left;font:inherit;font-size:14px;padding:9px 10px;border:2px solid var(--c);border-radius:8px;background:#fff;color:var(--tinta);cursor:pointer}
-.dia i{width:12px;height:12px;border-radius:50%;background:var(--c);flex:none}
-.dia small{display:block;color:#5b6475;font-size:12px}
-.dia[aria-pressed=true]{background:var(--c);color:#fff}.dia[aria-pressed=true] small{color:#fff}.dia[aria-pressed=true] i{background:#fff}
-.dia:focus-visible,#loc:focus-visible{outline:3px solid #000;outline-offset:2px}
-#loc{position:absolute;z-index:1000;right:10px;bottom:calc(24px + env(safe-area-inset-bottom));width:52px;height:52px;border-radius:50%;border:2px solid var(--azul);background:#fff;font-size:22px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3)}
-#loc[data-s=follow]{background:var(--azul)}#loc[data-s=watch]{background:#dce8f7}
-.pin span{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--c);color:#fff;font:bold 12px sans-serif;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5)}
-.pin.opt span{background:#fff;color:var(--c);border:2px dashed var(--c)}
-@media(max-width:640px){#panel{left:0;right:0;top:auto;bottom:0;width:auto;max-height:46%;border-radius:14px 14px 0 0;padding-bottom:calc(10px + env(safe-area-inset-bottom))}
- #loc{bottom:auto;right:auto;left:10px;top:calc(10px + env(safe-area-inset-top))}}
-</style></head><body>
-<div id="map"></div>
-<div id="panel"><h1>Mis viajes</h1><p style="margin:0 0 6px;font-size:12px;color:#5b6475">Los puntos con borde discontinuo son opcionales.</p><div id="trips"></div></div>
-<button id="loc" title="Mi ubicación" aria-label="Mi ubicación">📍</button>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="trips.js"></script>
-<script>
-const map=L.map('map',{zoomControl:false}).setView([37.389,-5.995],14);
-L.control.zoom({position:'topright'}).addTo(map);
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,crossOrigin:true,attribution:'© OpenStreetMap'}).addTo(map);
-const active={}, gm=(s,l)=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(l?s.n.replace(/\(.*\)/,'').trim()+', '+l:s.ll.join(','));
-const np=st=>{const n=st.length-(st.length>1&&st[st.length-1].n===st[0].n?1:0);return n+(n==1?' parada':' paradas')};
-const pad=()=>innerWidth<=640?{paddingTopLeft:[40,40],paddingBottomRight:[40,document.getElementById('panel').offsetHeight+20]}:{padding:[40,40]};
-const fit=()=>{const gs=Object.values(active);if(!gs.length)return;const b=L.latLngBounds(gs[0].getBounds());gs.forEach(g=>b.extend(g.getBounds()));map.fitBounds(b,pad())};
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Rutas de viaje</title>
+  <meta name="theme-color" content="#1f5fa8">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" crossorigin="">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div id="mapa"></div>
 
-async function walk(stops,modo){
-  const car=modo==='car';
-  const key='ruta:'+(car?'c:':'p:')+stops.map(s=>s.ll).join(';');
-  try{const c=localStorage.getItem(key);if(c)return JSON.parse(c)}catch{}
-  const q=stops.map(s=>s.ll[1]+','+s.ll[0]).join(';');
-  const r=await fetch('https://routing.openstreetmap.de/'+(car?'routed-car/route/v1/driving/':'routed-foot/route/v1/foot/')+q+'?overview=full&geometries=geojson');
-  if(!r.ok)throw new Error('HTTP '+r.status);
-  const j=(await r.json()).routes?.[0];
-  if(!j)throw new Error('sin ruta');
-  const out={line:j.geometry.coordinates.map(c=>[c[1],c[0]]),km:j.distance/1000};
-  try{localStorage.setItem(key,JSON.stringify(out))}catch{}
-  return out;
-}
-function build(day,info,lugar){
-  const g=L.featureGroup(), stops=day.stops;
-  const straight=L.polyline(stops.map(s=>s.ll),{color:day.color,weight:4,opacity:.7,dashArray:'6 8'}).addTo(g);
-  let n=0;
-  stops.forEach((s,i)=>{
-    if(stops.length>1&&i===stops.length-1&&s.n===stops[0].n)return;
-    const num=++n;
-    L.marker(s.ll,{icon:L.divIcon({className:'pin'+(s.opt?' opt':''),html:`<span style="--c:${day.color}">${num}</span>`,iconSize:[24,24]})})
-     .bindPopup(`<b>${s.n}</b>${s.note?'<br>'+s.note:''}<br><a target="_blank" rel="noopener" href="${gm(s,lugar)}">Abrir en Google Maps</a>`).addTo(g);
-  });
-  walk(stops,day.modo).then(r=>{straight.remove();L.polyline(r.line,{color:day.color,weight:5,opacity:.9}).addTo(g).bringToBack();
-    info.textContent=`${np(stops)} · ${r.km.toFixed(1).replace('.',',')} km ${day.modo==='car'?'en coche':'a pie'}`}).catch(()=>{info.textContent=`${np(stops)} · sin ruta por calles`});
-  return g;
-}
-const MESES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-TRIPS.forEach(t=>{if(!t.title&&t.lugar&&t.fecha){const [y,m]=t.fecha.split('-');t.title=`Viaje a ${t.lugar} en ${MESES[m-1]} ${y}`}});
-TRIPS.sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||'')); // más reciente primero
-const btns={};
-const root=document.getElementById('trips');
-TRIPS.forEach((t,ti)=>{
-  const d=document.createElement('details');d.open=ti===0;
-  d.innerHTML=`<summary>${t.title||t.lugar||'Viaje'}</summary><div class="dias"></div>`;
-  t.days.forEach((day,di)=>{
-    const id=ti+'-'+di,b=document.createElement('button');
-    b.className='dia';b.style.setProperty('--c',day.color);b.setAttribute('aria-pressed','false');
-    b.innerHTML=`<i></i><span>${day.name}<small>${np(day.stops)}</small></span>`;
-    const info=b.querySelector('small');
-    btns[id]=b;
-    b.onclick=()=>{
-      if(active[id]){active[id].remove();delete active[id];b.setAttribute('aria-pressed','false');return}
-      // al activar un día, se apagan las rutas de otros viajes
-      Object.keys(active).forEach(k=>{if(k.split('-')[0]!==String(ti)){active[k].remove();delete active[k];btns[k].setAttribute('aria-pressed','false')}});
-      active[id]=build(day,info,t.lugar).addTo(map);b.setAttribute('aria-pressed','true');
-      fit();
-    };
-    d.querySelector('.dias').append(b);
-  });
-  root.append(d);
-});
+  <aside id="panel" aria-label="Viajes y rutas">
+    <header class="panel-cab">
+      <h1>Rutas de viaje</h1>
+      <button type="button" id="btn-plegar" aria-expanded="true" aria-controls="panel-cuerpo">Ocultar</button>
+    </header>
+    <div id="panel-cuerpo">
+      <div id="errores" role="alert" hidden></div>
+      <div id="viajes"></div>
+      <p class="leyenda"><span class="num" style="--c:#1f5fa8">1</span> parada <span class="num opc" style="--c:#1f5fa8">2</span> opcional (borde discontinuo)</p>
+      <p class="herramientas"><a href="verificar.html">Verificar coordenadas</a></p>
+    </div>
+  </aside>
 
-map.fitBounds(TRIPS[0].days.flatMap(d=>d.stops.map(s=>s.ll)),pad());
+  <button type="button" id="btn-gps" aria-pressed="false"><span aria-hidden="true">◎</span> <span class="gps-texto">Ubicación</span></button>
+  <div id="aviso" role="status" aria-live="polite" hidden></div>
 
-// --- Ubicación GPS ---
-const btn=document.getElementById('loc');let wid=null,follow=false,dot,halo,lock=null;
-async function wake(){try{lock=await navigator.wakeLock.request('screen');if(wid===null){lock.release();lock=null}}catch{}}
-function setS(s){if(s)btn.dataset.s=s;else delete btn.dataset.s}
-function stop(){navigator.geolocation.clearWatch(wid);wid=null;follow=false;dot&&dot.remove();halo&&halo.remove();dot=halo=null;lock&&lock.release();lock=null;setS()}
-btn.onclick=()=>{
-  if(wid!==null){ if(follow){stop()} else {follow=true;setS('follow');dot&&map.setView(dot.getLatLng())} return }
-  if(!navigator.geolocation)return alert('Este navegador no permite geolocalización.');
-  follow=true;setS('follow');wake();
-  wid=navigator.geolocation.watchPosition(p=>{
-    const ll=[p.coords.latitude,p.coords.longitude];
-    if(!dot){halo=L.circle(ll,{radius:p.coords.accuracy,weight:1,color:'#1a73e8',fillOpacity:.12}).addTo(map);
-      dot=L.circleMarker(ll,{radius:8,color:'#fff',weight:3,fillColor:'#1a73e8',fillOpacity:1}).addTo(map)}
-    else{dot.setLatLng(ll);halo.setLatLng(ll).setRadius(p.coords.accuracy)}
-    if(follow)map.setView(ll,Math.max(map.getZoom(),16));
-  },e=>{if(e.code===1){alert('No se pudo obtener la ubicación: '+e.message);stop()}},{enableHighAccuracy:true,maximumAge:2000,timeout:20000});
-};
-map.on('dragstart',()=>{if(follow){follow=false;setS('watch')}});
-document.addEventListener('visibilitychange',()=>{if(wid!==null&&document.visibilityState==='visible')wake()});
-if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
-</script></body></html>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" crossorigin=""></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

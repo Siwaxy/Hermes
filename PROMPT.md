@@ -1,27 +1,34 @@
-Convierte el itinerario de viaje que te pego al final en UN objeto JavaScript para el array `window.TRIPS` de mi archivo `trips.js`.
+# Prompt para convertir un itinerario en un viaje JSON
 
-Esquema exacto:
+Pega esto en un chat de IA y, a continuación, tu itinerario en texto.
+
+```
+Convierte el itinerario que te pego en UN objeto JSON de viaje con exactamente este esquema. Responde SOLO con el JSON, sin texto antes ni después ni bloques de código.
 
 {
-  lugar: "Sevilla", fecha: "2026-10",
-  days: [
-    { name: "Lun 5 · Tema del día", color: "#1f5fa8", modo: "car", stops: [
-      { n: "Nombre del sitio", ll: [37.3921, -5.9946], note: "Nota corta y útil.", opt: true }
-    ]}
-  ]
+  "lugar": "Ciudad o región",
+  "fecha": "AAAA-MM",
+  "dias": [
+    {
+      "nombre": "Lun 5 · Título corto del día",
+      "modo": "coche",
+      "paradas": [
+        { "nombre": "Nombre", "ll": [lat, lng], "nota": "Frase corta y útil", "hora": "13:30", "opcional": true }
+      ]
+    }
+  ],
+  "extras": [ { "nombre": "Nombre", "ll": [lat, lng], "nota": "Frase corta" } ]
 }
 
 Reglas:
-- `lugar`: ciudad o zona del viaje. `fecha`: "AAAA-MM".
-- Un elemento de `days` por día. `name` con el formato "Lun 5 · Tema del día" (día de la semana abreviado y número, punto medio, tema).
-- `color` del día, en este orden y repitiendo si hay más de 4 días: #1f5fa8, #c98a1b, #a82a45, #2f7d5b.
-- `modo: "car"` solo si ese día se hace en coche; si es a pie, omite el campo.
-- `stops` en el orden del recorrido. Si el día empieza y termina en el hotel, repite el hotel con el mismo nombre al principio y al final.
-- `ll`: [lat, lng] con 4 decimales, del punto de entrada real del sitio (no del centro de la ciudad). Si no estás seguro de una coordenada, termina su `note` con "(verificar ubicación)".
-- `note`: una frase corta y útil (reservas, horarios, consejos). Sin relleno.
-- `opt: true` solo en paradas opcionales; en las demás, omite el campo.
-- No declares constantes ni variables: escribe siempre las coordenadas literales.
+- Obligatorios: lugar, fecha (AAAA-MM), dias[].nombre, dias[].paradas[].nombre y .ll. Todo lo demás es opcional: omítelo si no hay dato (no pongas null ni cadenas vacías).
+- "modo": solo "coche" si el día se hace en coche; en otro caso omite el campo (por defecto es a pie).
+- "ll" es [latitud, longitud] en grados decimales con 4 o 5 decimales, y apunta a la ENTRADA real del sitio (puerta o acceso), no al centro del edificio o del barrio. Si no estás seguro de una coordenada, di tu mejor estimación; se comprobará después.
+- Paradas en el orden en que se visitan. Si el día empieza y acaba en el alojamiento, repite el alojamiento como primera y última parada con las MISMAS coordenadas.
+- "hora" en formato HH:MM, solo si el itinerario fija una hora. "opcional": true solo para paradas marcadas como opcionales.
+- "nota": una frase corta y útil (reservas, avisos, dato breve).
+- "extras": lugares "si sobra tiempo" que no forman parte de ningún día. Omite el campo si no hay.
+- No añadas color ni otros campos. Texto en español. JSON válido (comillas dobles, sin comas finales).
+```
 
-Devuelve únicamente el objeto JS, terminado en coma, sin explicaciones ni bloque de texto adicional.
-
-Itinerario:
+Después: pega el objeto dentro de la lista `"viajes"` de `trips.json`, abre `verificar.html` y corrige las coordenadas marcadas en rojo.

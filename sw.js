@@ -1,31 +1,74 @@
-const V='rutas-v2', TILES='rutas-tiles-v2', MAX_TILES=500;
-const LEAF='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/';
-const SHELL=['./','index.html','trips.js','manifest.json','icon.svg',LEAF+'leaflet.min.css',LEAF+'leaflet.min.js'];
+// Service worker. App y trips.json: red primero, caché de respaldo. Leaflet y tiles: caché primero.
+// No toca la caché "rutas-v1" (rutas OSRM, la gestiona js/rutas.js) ni intercepta OSRM/Nominatim.
+const VERSION = 'v1';
+const PREFIJO = 'viaje-';
+const SHELL = `${PREFIJO}shell-${VERSION}`;
+const TILES = `${PREFIJO}tiles-${VERSION}`;
+const MAX_TILES = 1000;
+const LEAFLET = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/';
 
-self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(SHELL.map(u=>new Request(u,{cache:'reload'})))).then(()=>self.skipWaiting()))});
-self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith('rutas-')&&k!==V&&k!==TILES).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
+const ARCHIVOS = [
+  './', 'index.html', 'css/app.css', 'js/main.js', 'js/datos.js', 'js/rutas.js', 'js/gps.js',
+  'verificar.html', 'js/verificar.js', 'icon.svg', 'manifest.webmanifest', 'trips.json',
+  `${LEAFLET}leaflet.min.css`, `${LEAFLET}leaflet.min.js`,
+];
 
-async function netFirst(req){
-  const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),4000);
-  try{const r=await fetch(req,{cache:'no-cache',signal:ctl.signal}).finally(()=>clearTimeout(t));if(r.ok){const cp=r.clone();caches.open(V).then(c=>c.put(req,cp)).catch(()=>{})}return r}
-  catch(err){const c=await caches.match(req,{ignoreSearch:true});if(c)return c;throw err}
-}
-async function cacheFirst(req,name,max){
-  const cache=await caches.open(name),c=await cache.match(req);
-  if(c)return c;
-  const r=await fetch(req);
-  if(r.ok){const cp=r.clone();cache.put(req,cp).then(()=>max&&cache.keys()).then(ks=>ks&&ks.length>max&&Promise.all(ks.slice(0,ks.length-max).map(k=>cache.delete(k)))).catch(()=>{})}
-  return r;
-}
-self.addEventListener('fetch',e=>{
-  const req=e.request;
-  if(req.method!=='GET')return;
-  const u=new URL(req.url);
-  if(u.hostname==='routing.openstreetmap.de')return;
-  if(u.hostname.endsWith('tile.openstreetmap.org'))return e.respondWith(cacheFirst(req,TILES,MAX_TILES));
-  if(u.origin===location.origin){
-    if(req.mode==='navigate'||/(\/|index\.html|trips\.js)$/.test(u.pathname))return e.respondWith(netFirst(req));
-    return e.respondWith(caches.match(req).then(c=>c||fetch(req)));
+self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches
+      .open(SHELL)
+      .then((c) => c.addAll(ARCHIVOS.map((u) => new Request(u, { cache: 'reload' }))))
+      .then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', (e) => {
+  const vigentes = [SHELL, TILES];
+  e.waitUntil(
+    caches
+      .keys()
+      .then((claves) => Promise.all(claves.filter((k) => k.startsWith(PREFIJO) && !vigentes.includes(k)).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
+  );
+});
+
+async function redPrimero(req) {
+  const cache = await caches.open(SHELL);
+  const respaldo = () => cache.match(req, { ignoreSearch: true });
+  try {
+    const resp = await fetch(req, { signal: AbortSignal.timeout(8000) });
+    if (resp.ok) {
+      cache.put(req, resp.clone()).catch(() => {});
+      return resp;
+    }
+    return (await respaldo()) ?? resp;
+  } catch {
+    return (await respaldo()) ?? Response.error();
   }
-  if(u.hostname==='cdnjs.cloudflare.com')e.respondWith(cacheFirst(req,V));
+}
+
+async function tile(req) {
+  const cache = await caches.open(TILES);
+  const guardada = await cache.match(req);
+  if (guardada) return guardada;
+  const resp = await fetch(req);
+  if (resp.ok) {
+    try {
+      await cache.put(req, resp.clone());
+      const claves = await cache.keys(); // en orden de inserción
+      await Promise.all(claves.slice(0, Math.max(0, claves.length - MAX_TILES)).map((k) => cache.delete(k)));
+    } catch {
+      /* caché llena o no disponible: se sirve igualmente la respuesta de red */
+    }
+  }
+  return resp;
+}
+
+self.addEventListener('fetch', (e) => {
+  const req = e.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  if (url.origin === location.origin) e.respondWith(redPrimero(req));
+  else if (url.hostname.endsWith('tile.openstreetmap.org')) e.respondWith(tile(req));
+  else if (req.url.startsWith(LEAFLET)) e.respondWith(caches.match(req).then((r) => r ?? fetch(req)));
 });

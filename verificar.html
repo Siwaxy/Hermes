@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verificar coordenadas</title>
+  <style>
+    body { font: 15px/1.4 system-ui, sans-serif; margin: 16px; color: #1c1c1c; }
+    button { font: inherit; padding: 8px 16px; }
+    :focus-visible { outline: 3px solid #0b57d0; outline-offset: 2px; }
+    .tabla-caja { overflow-x: auto; }
+    table { border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+    th, td { border: 1px solid #ccc; padding: 4px 8px; text-align: left; }
+    tr.mal { background: #fdecea; color: #7a1010; font-weight: 600; }
+    #errores { color: #7a1010; }
+    a { color: #0b57d0; }
+  </style>
+</head>
+<body>
+  <p><a href="index.html">&larr; Volver al mapa</a></p>
+  <h1>Verificar coordenadas</h1>
+  <p>Compara cada parada y extra de <code>trips.json</code> con Nominatim (1 petición por segundo). Solo informa; no modifica nada. En rojo: más de 150 m de diferencia o no encontrado.</p>
+  <button type="button" id="empezar">Empezar</button>
+  <span id="progreso" role="status"></span>
+  <p id="errores" role="alert"></p>
+  <p id="resumen" role="status"></p>
+  <div class="tabla-caja">
+    <table id="tabla">
+      <thead><tr><th>Viaje</th><th>Tipo</th><th>Nombre</th><th>ll actual</th><th>ll Nominatim</th><th>Distancia</th><th>Ver en OSM</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <script type="module" src="js/verificar.js"></script>
+</body>
+</html>

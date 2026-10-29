@@ -1,0 +1,98 @@
+{
+  "viajes": [
+    {
+      "lugar": "Sevilla",
+      "fecha": "2026-10",
+      "dias": [
+        {
+          "nombre": "Lun 5 · Centro, Santa Cruz y flamenco",
+          "paradas": [
+            { "nombre": "Hotel (C. Cuna 4)", "ll": [37.3921, -5.9946], "nota": "Salida y vuelta" },
+            { "nombre": "Plaza del Salvador", "ll": [37.3925, -5.9930], "nota": "Buen sitio para un café de arranque" },
+            { "nombre": "Calle Sierpes", "ll": [37.3894, -5.9935], "nota": "Calle comercial peatonal histórica" },
+            { "nombre": "Calle Tetuán", "ll": [37.3900, -5.9950], "nota": "Tiendas y pastelerías tradicionales" },
+            { "nombre": "Plaza de San Francisco", "ll": [37.3886, -5.9953], "nota": "Ayuntamiento y fachada plateresca" },
+            { "nombre": "Catedral y Giralda (exterior)", "ll": [37.3862, -5.9926], "nota": "Hoy solo por fuera; la visita es el jueves" },
+            { "nombre": "Barrio de Santa Cruz", "ll": [37.3857, -5.9895], "nota": "Callejuelas y patios; mejor sin prisa" },
+            { "nombre": "Patio de Banderas", "ll": [37.3860, -5.9918], "nota": "Entrada de paso junto al Alcázar" },
+            { "nombre": "Flamenco · Casa de la Memoria", "ll": [37.3920, -5.9944], "nota": "Reservar entrada" },
+            { "nombre": "Hotel (C. Cuna 4)", "ll": [37.3921, -5.9946] }
+          ]
+        },
+        {
+          "nombre": "Mar 6 · Pilatos, Plaza de España y Triana",
+          "paradas": [
+            { "nombre": "Hotel (C. Cuna 4)", "ll": [37.3921, -5.9946], "hora": "09:00", "nota": "Salida a las 9:00" },
+            { "nombre": "Casa de Pilatos", "ll": [37.3927, -5.9905], "nota": "Palacio mudéjar-renacentista con patio" },
+            { "nombre": "Barrio de Santa Cruz", "ll": [37.3857, -5.9895], "nota": "Paso hacia el sur por sus calles" },
+            { "nombre": "Puerta de Jerez", "ll": [37.3837, -5.9948], "nota": "Antigua puerta de la ciudad" },
+            { "nombre": "Plaza de España", "ll": [37.3772, -5.9869], "nota": "Mejor con luz de mañana" },
+            { "nombre": "Parque de María Luisa", "ll": [37.3735, -5.9873], "nota": "Paseo tranquilo entre fuentes y glorietas" },
+            { "nombre": "Puente de San Telmo", "ll": [37.3807, -5.9967], "nota": "Cruzar el río hacia Triana" },
+            { "nombre": "Puente de Triana", "ll": [37.3855, -6.0000], "nota": "Puente de Isabel II, entrada al barrio" },
+            { "nombre": "Triana", "ll": [37.3834, -6.0033], "nota": "Cerámica y bares de barrio" },
+            { "nombre": "Calle Betis", "ll": [37.3828, -6.0003], "nota": "Paseo junto al río con vistas al casco antiguo" },
+            { "nombre": "Hotel (C. Cuna 4)", "ll": [37.3921, -5.9946] }
+          ]
+        },
+        {
+          "nombre": "Mié 7 · Dueñas, Alameda y Setas",
+          "paradas": [
+            { "nombre": "Hotel (C. Cuna 4)", "ll": [37.3921, -5.9946] },
+            { "nombre": "Palacio de Dueñas", "ll": [37.3960, -5.9893], "nota": "Casa de los duques de Alba, con jardín" },
+            { "nombre": "Basílica de la Macarena", "ll": [37.4008, -5.9918], "nota": "Si hay ganas; está algo alejada", "opcional": true },
+            { "nombre": "Alameda de Hércules", "ll": [37.3985, -5.9948], "nota": "Zona de bares y ambiente local" },
+            { "nombre": "Setas · Antiquarium y mirador", "ll": [37.3933, -5.9917], "nota": "Mirador al atardecer" },
+            { "nombre": "Hotel (C. Cuna 4)", "ll": [37.3921, -5.9946] }
+          ]
+        },
+        {
+          "nombre": "Jue 8 · Río, Arenal y Catedral",
+          "paradas": [
+            { "nombre": "Hotel (C. Cuna 4)", "ll": [37.3921, -5.9946] },
+            { "nombre": "Plaza Nueva", "ll": [37.3881, -5.9962], "nota": "Punto de paso hacia el Arenal" },
+            { "nombre": "Arenal", "ll": [37.3850, -5.9973], "nota": "Barrio histórico del puerto" },
+            { "nombre": "Torre del Oro (exterior)", "ll": [37.3824, -5.9963], "nota": "Torre almohade junto al río" },
+            { "nombre": "Plaza de Toros de la Maestranza", "ll": [37.3846, -5.9981], "nota": "Una de las plazas más antiguas de España" },
+            { "nombre": "Mercado del Barranco", "ll": [37.3855, -5.9990], "nota": "Opción para comer algo antes de la visita" },
+            { "nombre": "Catedral y Giralda", "ll": [37.3862, -5.9926], "hora": "13:30", "nota": "Llegar 13:15; visita de ~75 min" },
+            { "nombre": "Iglesia del Salvador", "ll": [37.3925, -5.9929], "nota": "Incluida en la entrada de la Catedral" },
+            { "nombre": "Hotel (C. Cuna 4)", "ll": [37.3921, -5.9946] }
+          ]
+        }
+      ],
+      "extras": [
+        { "nombre": "Real Alcázar", "ll": [37.3831, -5.9902], "nota": "Sin entradas" }
+      ]
+    },
+    {
+      "lugar": "Cantabria",
+      "fecha": "2026-08",
+      "dias": [
+        {
+          "nombre": "Sáb 1 · Costa occidental",
+          "modo": "coche",
+          "paradas": [
+            { "nombre": "Santander · Palacio de la Magdalena", "ll": [43.4614, -3.7747], "hora": "09:30", "nota": "Aparcar y pasear por la península" },
+            { "nombre": "Santillana del Mar", "ll": [43.3881, -4.1086], "nota": "Pueblo medieval; aparcamiento a la entrada" },
+            { "nombre": "Comillas · El Capricho de Gaudí", "ll": [43.3855, -4.2889], "nota": "Visita exterior gratuita", "opcional": true },
+            { "nombre": "San Vicente de la Barquera", "ll": [43.3833, -4.3989], "nota": "Comer junto a la ría" }
+          ]
+        },
+        {
+          "nombre": "Dom 2 · Picos de Europa",
+          "modo": "coche",
+          "color": "#7a3fb0",
+          "paradas": [
+            { "nombre": "Potes", "ll": [43.1522, -4.6269], "nota": "Aparcar y desayunar" },
+            { "nombre": "Santo Toribio de Liébana", "ll": [43.1396, -4.6481], "nota": "Monasterio con vistas al valle" },
+            { "nombre": "Fuente Dé", "ll": [43.1486, -4.8128], "hora": "12:00", "nota": "Teleférico; comprobar viento y niebla" }
+          ]
+        }
+      ],
+      "extras": [
+        { "nombre": "Parque de la Naturaleza de Cabárceno", "ll": [43.3544, -3.8481], "nota": "Para media jornada extra" }
+      ]
+    }
+  ]
+}
